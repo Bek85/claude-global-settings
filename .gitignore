@@ -1,0 +1,70 @@
+# Credentials & Secrets - NEVER sync
+.claude/.credentials.json
+.claude/credentials.json
+.credentials.json
+
+# User-specific history
+.claude/history.jsonl
+history.jsonl
+
+# Per-machine workspace state
+.claude/projects/
+projects/
+
+# IDE integration state
+.claude/ide/
+ide/
+
+# Session state (auto-generated)
+.claude/session-env/
+.claude/todos/
+.claude/shell-snapshots/
+.claude/file-history/
+.claude/plans/
+session-env/
+todos/
+shell-snapshots/
+file-history/
+
+# Analytics & telemetry
+.claude/telemetry/
+.claude/statsig/
+.claude/debug/
+.claude/stats-cache.json
+telemetry/
+statsig/
+debug/
+stats-cache.json
+
+# Environment files with secrets
+.env
+.env.local
+.env.*.local
+*.env
+
+# But allow example files
+!.env.example
+!*.env.example
+
+# OS files
+.DS_Store
+Thumbs.db
+Desktop.ini
+
+# Editor files
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
+*.sublime-*
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Node
+node_modules/

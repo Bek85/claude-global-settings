@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ck:*)",
+      "Bash(npx claudekit-cli --version)",
+      "Bash(ls:*)",
+      "Bash(gh auth status:*)",
+      "Bash(ssh:*)",
+      "Bash(xcopy:*)",
+      "Bash(grep:*)"
+    ]
+  }
+}
