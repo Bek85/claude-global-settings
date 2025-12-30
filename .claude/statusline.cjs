@@ -145,23 +145,31 @@ async function main() {
         const modelName = data.model?.display_name || 'Claude';
         const modelVersion = data.model?.version && data.model.version !== 'null' ? data.model.version : '';
 
-        // Git branch detection
+        // Git branch detection + dirty status
         let gitBranch = '';
+        let gitDirty = 0;
         const gitCheck = exec('git rev-parse --git-dir');
         if (gitCheck) {
             gitBranch = exec('git branch --show-current');
             if (!gitBranch) {
                 gitBranch = exec('git rev-parse --short HEAD');
             }
+            // Count uncommitted changes (staged + unstaged)
+            const gitStatus = exec('git status --porcelain');
+            if (gitStatus) {
+                gitDirty = gitStatus.split('\n').filter(l => l.trim()).length;
+            }
         }
 
         // Native Claude Code data integration
         let sessionText = '';
+        let sessionDuration = '';
         let costUSD = '';
         let linesAdded = 0;
         let linesRemoved = 0;
         let contextPercent = 0;
         let contextText = '';
+        let tokenCountText = '';
         const billingMode = env.CLAUDE_BILLING_MODE || 'api';
 
         // Extract native cost data from Claude Code
@@ -196,7 +204,13 @@ async function main() {
                 const bar = progressBar(contextPercent, 12);
                 contextText = `${emoji} ${bar} ${contextPercent}%`;
             }
+
         }
+
+        // Token count display (input/output in k) - always show
+        const inputK = Math.round(contextInput / 1000);
+        const outputK = Math.round(contextOutput / 1000);
+        tokenCountText = `${inputK}k/${outputK}k`;
 
         // Session timer - parse local transcript JSONL (zero external dependencies)
         const transcriptPath = data.transcript_path;
@@ -222,6 +236,19 @@ async function main() {
                     }
 
                     if (firstApiCall) {
+                        // Calculate session duration
+                        const nowMs = Date.now();
+                        const firstApiMs = firstApiCall * 1000;
+                        const durationMs = nowMs - firstApiMs;
+                        const durationMins = Math.floor(durationMs / 60000);
+                        const durationHours = Math.floor(durationMins / 60);
+                        const durationRemMins = durationMins % 60;
+                        if (durationHours > 0) {
+                            sessionDuration = `${durationHours}h ${durationRemMins}m`;
+                        } else {
+                            sessionDuration = `${durationRemMins}m`;
+                        }
+
                         // Calculate 5-hour billing block (Anthropic windows)
                         const now = new Date();
                         const currentUtcHour = now.getUTCHours();
@@ -259,9 +286,12 @@ async function main() {
         // Directory
         output += `📁 ${currentDir}`;
 
-        // Git branch
+        // Git branch + dirty indicator
         if (gitBranch) {
             output += `  🌿 ${gitBranch}`;
+            if (gitDirty > 0) {
+                output += ` (${gitDirty})`;
+            }
         }
 
         // Model
@@ -272,7 +302,10 @@ async function main() {
             output += ` ${modelVersion}`;
         }
 
-        // Session time
+        // Session duration (show 0m if no transcript yet)
+        output += `  ⏱️ ${sessionDuration || '0m'}`;
+
+        // Session time (billing block reset)
         if (sessionText) {
             output += `  ⌛ ${sessionText}`;
         }
@@ -286,6 +319,11 @@ async function main() {
         // Lines changed
         if ((linesAdded > 0 || linesRemoved > 0)) {
             output += `  📝 +${linesAdded} -${linesRemoved}`;
+        }
+
+        // Token count (input/output)
+        if (tokenCountText) {
+            output += `  🔢 ${tokenCountText}`;
         }
 
         // Context window usage (Claude Code v2.0.65+)
