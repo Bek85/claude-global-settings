@@ -7,7 +7,16 @@
       "Bash(gh auth status:*)",
       "Bash(ssh:*)",
       "Bash(xcopy:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(node -e \"\nconst existing = {autoUpdatesChannel: ''latest''};\nconst newSettings = JSON.parse\\(require\\(''fs''\\).readFileSync\\(''.claude/settings.json'', ''utf8''\\)\\);\nconst merged = {...newSettings, ...existing};\nrequire\\(''fs''\\).writeFileSync\\(''/c/Users/Alex/.claude/settings.json'', JSON.stringify\\(merged, null, 2\\)\\);\nconsole.log\\(''Merged settings.json''\\);\n\")",
+      "Bash(done)",
+      "Bash(for f in code-reviewer.md copywriter.md database-admin.md debugger.md journal-writer.md planner.md project-manager.md researcher.md scout.md scout-external.md tester.md ui-ux-designer.md)",
+      "Bash(do)",
+      "Bash(if grep -q '\\\\\\\\n' \"$f\")",
+      "Bash(then)",
+      "Bash(echo:*)",
+      "Bash(fi)",
+      "Bash(node fix-agents.cjs:*)"
     ]
   }
 }
