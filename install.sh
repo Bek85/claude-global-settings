@@ -1,12 +1,15 @@
 #!/bin/bash
 # Claude Global Settings Installer for Linux/macOS
 # Usage: chmod +x install.sh && ./install.sh
+#
+# This script safely installs Claude global settings without destroying
+# existing user data (credentials, history, cache, etc.)
 
 set -e
 
 CLAUDE_DIR="$HOME/.claude"
 REPO_DIR="$(cd "$(dirname "$0")" && pwd)"
-TIMESTAMP=$(date +%Y%m%d%H%M%S)
+REPO_CLAUDE="$REPO_DIR/.claude"
 
 echo "╭─────────────────────────────────────────╮"
 echo "│   Claude Global Settings Installer      │"
@@ -14,22 +17,80 @@ echo "╰───────────────────────�
 echo ""
 
 # Check if source .claude exists
-if [ ! -d "$REPO_DIR/.claude" ]; then
+if [ ! -d "$REPO_CLAUDE" ]; then
     echo "❌ Error: .claude folder not found in repo"
     exit 1
 fi
 
-# Backup existing .claude if it exists
-if [ -d "$CLAUDE_DIR" ]; then
-    BACKUP_DIR="$CLAUDE_DIR.backup.$TIMESTAMP"
-    echo "📦 Backing up existing $CLAUDE_DIR to $BACKUP_DIR"
-    mv "$CLAUDE_DIR" "$BACKUP_DIR"
-    echo "✓ Backup created"
-fi
+# Create .claude directory if it doesn't exist
+mkdir -p "$CLAUDE_DIR"
 
-# Copy .claude folder
-echo "📁 Copying .claude folder..."
-cp -r "$REPO_DIR/.claude" "$CLAUDE_DIR"
+# Copy folders (these are safe to overwrite)
+echo "📁 Installing components..."
+
+FOLDERS="agents commands hooks skills scripts workflows output-styles"
+for folder in $FOLDERS; do
+    if [ -d "$REPO_CLAUDE/$folder" ]; then
+        echo "  • Copying $folder/"
+        rm -rf "$CLAUDE_DIR/$folder"
+        cp -r "$REPO_CLAUDE/$folder" "$CLAUDE_DIR/"
+    fi
+done
+
+# Copy individual files
+echo "📄 Copying config files..."
+FILES="statusline.cjs statusline.sh statusline.ps1 .ck.json .ckignore metadata.json .env.example .mcp.json.example .gitignore"
+for file in $FILES; do
+    if [ -f "$REPO_CLAUDE/$file" ]; then
+        cp "$REPO_CLAUDE/$file" "$CLAUDE_DIR/"
+    fi
+done
+
+# Merge settings.json (preserve user settings, add new hooks/statusLine)
+echo "🔧 Merging settings.json..."
+
+if command -v node &> /dev/null; then
+    node -e "
+const fs = require('fs');
+const path = require('path');
+
+const userSettingsPath = '$CLAUDE_DIR/settings.json';
+const repoSettingsPath = '$REPO_CLAUDE/settings.json';
+
+let userSettings = {};
+let repoSettings = {};
+
+// Read existing user settings
+if (fs.existsSync(userSettingsPath)) {
+    try {
+        userSettings = JSON.parse(fs.readFileSync(userSettingsPath, 'utf8'));
+    } catch (e) {
+        console.log('  Warning: Could not parse existing settings.json, will use defaults');
+    }
+}
+
+// Read repo settings
+if (fs.existsSync(repoSettingsPath)) {
+    repoSettings = JSON.parse(fs.readFileSync(repoSettingsPath, 'utf8'));
+}
+
+// Merge: repo settings as base, preserve user preferences
+const merged = {
+    ...repoSettings,
+    ...userSettings,
+    // Always use repo's hooks and statusLine
+    hooks: repoSettings.hooks,
+    statusLine: repoSettings.statusLine,
+    includeCoAuthoredBy: repoSettings.includeCoAuthoredBy
+};
+
+fs.writeFileSync(userSettingsPath, JSON.stringify(merged, null, 2));
+console.log('  ✓ Settings merged');
+"
+else
+    echo "  ⚠ Node.js not found, copying settings.json directly"
+    cp "$REPO_CLAUDE/settings.json" "$CLAUDE_DIR/settings.json"
+fi
 
 # Replace {{HOME}} placeholder with actual home directory
 echo "🔧 Configuring paths..."
@@ -43,7 +104,9 @@ fi
 
 # Make scripts executable
 chmod +x "$CLAUDE_DIR/statusline.sh" 2>/dev/null || true
+chmod +x "$CLAUDE_DIR/statusline.cjs" 2>/dev/null || true
 chmod +x "$CLAUDE_DIR/hooks/"*.cjs 2>/dev/null || true
+chmod +x "$CLAUDE_DIR/scripts/"*.sh 2>/dev/null || true
 
 echo ""
 echo "╭─────────────────────────────────────────╮"
@@ -55,12 +118,14 @@ echo ""
 echo "Next steps:"
 echo "  1. Restart Claude Code"
 echo "  2. Test: claude"
-echo "  3. Try: /plan test"
+echo "  3. Try: /agents to see available agents"
 echo ""
 
 # Show what was installed
 echo "Installed components:"
-echo "  • Commands: $(find "$CLAUDE_DIR/commands" -name "*.md" | wc -l | tr -d ' ') files"
+echo "  • Commands: $(find "$CLAUDE_DIR/commands" -name "*.md" 2>/dev/null | wc -l | tr -d ' ') files"
 echo "  • Skills:   $(ls -d "$CLAUDE_DIR/skills"/*/ 2>/dev/null | wc -l | tr -d ' ') folders"
 echo "  • Agents:   $(ls "$CLAUDE_DIR/agents/"*.md 2>/dev/null | wc -l | tr -d ' ') files"
 echo "  • Hooks:    $(ls "$CLAUDE_DIR/hooks/"*.cjs 2>/dev/null | wc -l | tr -d ' ') files"
+echo ""
+echo "Note: Your existing credentials, history, and cache were preserved."
