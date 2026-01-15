@@ -16,7 +16,9 @@
       "Bash(then)",
       "Bash(echo:*)",
       "Bash(fi)",
-      "Bash(node fix-agents.cjs:*)"
+      "Bash(node fix-agents.cjs:*)",
+      "Bash(cygpath:*)",
+      "Bash(./install.sh:*)"
     ]
   }
 }

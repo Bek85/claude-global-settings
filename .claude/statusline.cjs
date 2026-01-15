@@ -303,18 +303,18 @@ async function main() {
         }
 
         // Session duration (show 0m if no transcript yet)
-        output += `  ⏱️ ${sessionDuration || '0m'}`;
+        // output += `  ⏱️ ${sessionDuration || '0m'}`;
 
         // Session time (billing block reset)
-        if (sessionText) {
-            output += `  ⌛ ${sessionText}`;
-        }
+        // if (sessionText) {
+        //     output += `  ⌛ ${sessionText}`;
+        // }
 
         // Cost (only show for API billing mode)
-        if (billingMode === 'api' && costUSD && /^\d+(\.\d+)?$/.test(costUSD.toString())) {
-            const costUSDNum = parseFloat(costUSD);
-            output += `  💵 $${costUSDNum.toFixed(4)}`;
-        }
+        // if (billingMode === 'api' && costUSD && /^\d+(\.\d+)?$/.test(costUSD.toString())) {
+        //     const costUSDNum = parseFloat(costUSD);
+        //     output += `  💵 $${costUSDNum.toFixed(4)}`;
+        // }
 
         // Lines changed
         if ((linesAdded > 0 || linesRemoved > 0)) {
@@ -327,9 +327,9 @@ async function main() {
         }
 
         // Context window usage (Claude Code v2.0.65+)
-        if (contextText) {
-            output += `  ${contextText}`;
-        }
+        // if (contextText) {
+        //     output += `  ${contextText}`;
+        // }
 
         console.log(output);
     } catch (err) {

@@ -50,12 +50,24 @@ done
 echo "🔧 Merging settings.json..."
 
 if command -v node &> /dev/null; then
+    # Convert Git Bash paths to Windows paths for Node.js
+    # Git Bash: /c/Users/Alex -> Windows: C:\Users\Alex
+    CLAUDE_DIR_WIN="$CLAUDE_DIR"
+    REPO_CLAUDE_WIN="$REPO_CLAUDE"
+
+    # Check if we're on Windows (Git Bash/MSYS2)
+    if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+        # Convert /c/ style paths to C:/ style for Node.js (forward slashes to avoid escape issues)
+        CLAUDE_DIR_WIN=$(cygpath -m "$CLAUDE_DIR" 2>/dev/null || echo "$CLAUDE_DIR" | sed 's|^/\([a-z]\)/|\U\1:/|')
+        REPO_CLAUDE_WIN=$(cygpath -m "$REPO_CLAUDE" 2>/dev/null || echo "$REPO_CLAUDE" | sed 's|^/\([a-z]\)/|\U\1:/|')
+    fi
+
     node -e "
 const fs = require('fs');
 const path = require('path');
 
-const userSettingsPath = '$CLAUDE_DIR/settings.json';
-const repoSettingsPath = '$REPO_CLAUDE/settings.json';
+const userSettingsPath = '$CLAUDE_DIR_WIN/settings.json';
+const repoSettingsPath = '$REPO_CLAUDE_WIN/settings.json';
 
 let userSettings = {};
 let repoSettings = {};
@@ -94,12 +106,19 @@ fi
 
 # Replace {{HOME}} placeholder with actual home directory
 echo "🔧 Configuring paths..."
+
+# On Windows, convert $HOME to Windows format (C:/Users/Alex) for Node.js
+HOME_PATH="$HOME"
+if [[ "$OSTYPE" == "msys" ]] || [[ "$OSTYPE" == "win32" ]]; then
+    HOME_PATH=$(cygpath -m "$HOME" 2>/dev/null || echo "$HOME" | sed 's|^/\([a-z]\)/|\U\1:/|')
+fi
+
 if [[ "$OSTYPE" == "darwin"* ]]; then
     # macOS uses different sed syntax
-    sed -i '' "s|{{HOME}}|$HOME|g" "$CLAUDE_DIR/settings.json"
+    sed -i '' "s|{{HOME}}|$HOME_PATH|g" "$CLAUDE_DIR/settings.json"
 else
-    # Linux
-    sed -i "s|{{HOME}}|$HOME|g" "$CLAUDE_DIR/settings.json"
+    # Linux/Windows
+    sed -i "s|{{HOME}}|$HOME_PATH|g" "$CLAUDE_DIR/settings.json"
 fi
 
 # Make scripts executable
