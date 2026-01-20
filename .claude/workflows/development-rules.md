@@ -19,6 +19,23 @@
 - **[IMPORTANT]** Follow the codebase structure and code standards in `./docs` during implementation.
 - **[IMPORTANT]** Do not just simulate the implementation or mocking them, always implement the real code.
 
+## Skill Usage Policy
+**CRITICAL:** Skills must be invoked proactively, not just mentioned or suggested.
+
+- **ALWAYS check available skills** before responding to any user request
+- **IMMEDIATELY invoke relevant skills** as the FIRST action when the request matches a skill's purpose:
+  - User asks "how does X work?" or "explain this code" → **invoke** `explaining-code`
+  - User wants to commit changes → **invoke** `git-manager` skill
+  - User requests code review → **invoke** `code-review`
+  - User asks about implementation approach → **invoke** `planning` or `research`
+  - User mentions AI models/prompts → **invoke** `ai-artist`
+  - User works with images/videos/documents → **invoke** `ai-multimodal`
+  - Task debugging/troubleshooting → **invoke** `debugging` or `sequential-thinking`
+  - Any task matching skill description → **invoke that skill**
+- **Don't announce or suggest** what skill you could use - actually invoke it with the Skill tool
+- **Don't provide your own response** when a specialized skill exists for the task
+- Skills provide specialized capabilities - trust them over general responses
+
 ## Code Quality Guidelines
 - Read and follow codebase structure and code standards in `./docs`
 - Don't be too harsh on code linting, but **make sure there are no syntax errors and code are compilable**
